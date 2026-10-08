@@ -25,7 +25,7 @@ Greenfield : **pas** de reprise du code React/Capacitor V1.
 Feature-first sous `lib/features/` :
 
 - `auth` — login, signup, gate session, repository
-- `feed` — fil `posts` + auteur (`profiles!author_id`), pull-to-refresh, filtres type
+- `feed` — fil `posts` + auteur (`profiles!author_id`), publication, pull-to-refresh, filtres type
 - `patterns` — marketplace patrons PDF (placeholder)
 - `fabric_merchant` — catalogue tissus (placeholder)
 - `profile` — profil + stock + logout
@@ -54,10 +54,24 @@ Prod données : projet Supabase `uwszstlhdrkxznygdloe`.
 - États FR : chargement, vide, erreur + pull-to-refresh
 - Filtres simples sur `type` (Dress, Top, …) — stub avancé plus tard
 
+## Publication (cette version)
+
+- Écran **Publier un projet** (FAB / + sur le feed)
+- Insert `posts` avec `author_id` = utilisateur connecté
+- Mapping champs UI → colonnes réelles :
+  - Titre → `pattern_name`
+  - Légende → `caption`
+  - Description → `modifications` (pas de colonne `description`)
+  - Type → `type`
+  - Image → `image_url` + `images[]`
+- Storage prod : bucket **`sewsapp-images`** (préfixe `posts/`) — pas de bucket nommé `posts`
+- Upload image optionnel ; si RLS refuse → message FR + champ URL
+- Après succès : retour au feed + refresh
+
 ## Prochaines phases
 
 1. Stock / marketplace branchés sur les tables prod
-2. Publication, likes, commentaires
+2. Likes, commentaires
 3. Edge Functions Stripe
 4. Module marchand tissus
 5. Staging dédié avant tout cutover schéma

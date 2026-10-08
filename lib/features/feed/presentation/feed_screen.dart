@@ -4,6 +4,7 @@ import '../../../core/roles/user_role.dart';
 import '../data/feed_post.dart';
 import '../data/feed_repository.dart';
 import 'post_card.dart';
+import 'publish_project_screen.dart';
 
 /// Fil d'actualité — posts Supabase (projets cousus).
 class FeedScreen extends StatefulWidget {
@@ -85,6 +86,21 @@ class _FeedScreenState extends State<FeedScreen> {
     _load();
   }
 
+  Future<void> _openPublish() async {
+    final created = await Navigator.of(context).push<FeedPost>(
+      MaterialPageRoute(
+        builder: (_) => const PublishProjectScreen(),
+      ),
+    );
+    if (!mounted) return;
+    if (created != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Projet publié sur le fil.')),
+      );
+      await _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -94,11 +110,21 @@ class _FeedScreenState extends State<FeedScreen> {
         title: const Text('Feed'),
         actions: [
           IconButton(
+            tooltip: 'Publier un projet',
+            onPressed: _loading ? null : _openPublish,
+            icon: const Icon(Icons.add_circle_outline),
+          ),
+          IconButton(
             tooltip: 'Actualiser',
             onPressed: _loading ? null : _load,
             icon: const Icon(Icons.refresh),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _loading ? null : _openPublish,
+        icon: const Icon(Icons.add),
+        label: const Text('Publier'),
       ),
       body: Column(
         children: [

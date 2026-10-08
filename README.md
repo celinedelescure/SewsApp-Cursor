@@ -2,7 +2,7 @@
 
 Rebuild greenfield de [sewsapp.com](https://www.sewsapp.com) : app couture (feed, marketplace patrons, marchand de tissus) en **Flutter** + **Supabase** + **Stripe Connect**.
 
-Cette version branche la **connexion / inscription** et le **fil d’actualité** (posts) sur Supabase (clé **anon** uniquement).
+Cette version branche la **connexion / inscription**, le **fil d’actualité** et la **publication d’un projet** sur Supabase (clé **anon** uniquement).
 
 ## Prérequis
 
@@ -41,7 +41,9 @@ Variables documentées dans [`.env.example`](.env.example) (le fichier `.env` lo
 3. Ou appuyez sur **Créer un compte** (si Auth autorise les inscriptions).
 4. Après connexion, l’onglet **Feed** charge les posts prod (`posts` + auteur `profiles`).
 5. Tirez vers le bas pour actualiser ; filtres type (Robes, Hauts…) en haut.
-6. Onglet **Profil** → **Se déconnecter**.
+6. Appuyez sur **Publier** (ou l’icône +) → titre / légende / description → **Publier**.  
+   L’upload d’image vers Storage peut être refusé par RLS : dans ce cas, collez une **URL** d’image ou publiez sans photo.
+7. Onglet **Profil** → **Se déconnecter**.
 
 | Valeur en base (`account_type`) | Affiché dans l’app |
 |---------------------------------|--------------------|
@@ -58,7 +60,7 @@ lib/
   core/           # config (--dart-define), client Supabase, thème, rôles
   features/
     auth/         # login, signup, session, lecture profiles
-    feed/         # fil posts + cartes + filtres type
+    feed/         # fil posts + publier un projet + filtres type
     patterns/
     fabric_merchant/
     profile/      # profil + déconnexion + stock
@@ -68,4 +70,4 @@ docs/architecture.md
 
 ## Hors scope de ce PR
 
-Publication de posts, likes/commentaires, Stripe live, migration / modification du schéma Supabase prod.
+Likes/commentaires, Stripe live, migration / modification du schéma Supabase prod.

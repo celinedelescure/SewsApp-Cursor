@@ -4,13 +4,14 @@ import 'package:sewsapp/core/roles/user_role.dart';
 import 'package:sewsapp/features/patterns/data/pattern_listing.dart';
 import 'package:sewsapp/features/patterns/data/pattern_purchase.dart';
 import 'package:sewsapp/features/patterns/data/patterns_repository.dart';
+import 'package:sewsapp/features/profile/data/fabric_item.dart';
+import 'package:sewsapp/features/profile/data/fabrics_repository.dart';
 import 'package:sewsapp/features/profile/presentation/stock_screen.dart';
 
 class _FakePatternsSource implements PatternsSource {
-  _FakePatternsSource({this.purchases = const [], this.error});
+  _FakePatternsSource({this.purchases = const []});
 
   final List<PatternPurchase> purchases;
-  final PatternsFailure? error;
 
   @override
   Future<List<PatternListing>> fetchPublishedCatalog({String? typeFilter}) =>
@@ -38,7 +39,6 @@ class _FakePatternsSource implements PatternsSource {
   @override
   Future<List<PatternPurchase>> fetchMyPurchases() async {
     await Future<void>.delayed(const Duration(milliseconds: 10));
-    if (error != null) throw error!;
     return purchases;
   }
 
@@ -47,23 +47,52 @@ class _FakePatternsSource implements PatternsSource {
       purchases.map((p) => p.patternId).toSet();
 }
 
+class _FakeFabricsSource implements FabricsSource {
+  _FakeFabricsSource({this.fabrics = const [], this.error});
+
+  final List<FabricItem> fabrics;
+  final FabricsFailure? error;
+  final List<FabricItemInput> added = [];
+
+  @override
+  Future<List<FabricItem>> fetchMyFabrics() async {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    if (error != null) throw error!;
+    return fabrics;
+  }
+
+  @override
+  Future<FabricItem> addFabric(FabricItemInput input) async {
+    added.add(input);
+    return FabricItem(
+      id: 'new-${added.length}',
+      userId: 'u1',
+      name: input.name,
+      type: input.type,
+      color: input.color,
+      length: input.length,
+    );
+  }
+}
+
 void main() {
-  testWidgets('Stock vide affiche l’état empty', (tester) async {
+  testWidgets('Stock vide affiche l’état empty tissus + patrons', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: StockScreen(
           role: UserRole.couturiere,
           source: _FakePatternsSource(),
+          fabricsSource: _FakeFabricsSource(),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Aucun patron dans votre stock'), findsOneWidget);
-    expect(find.textContaining('tissus arrivent plus tard'), findsOneWidget);
+    expect(find.text('Votre stock est vide'), findsOneWidget);
+    expect(find.text('Ajouter un tissu'), findsWidgets);
   });
 
-  testWidgets('Stock liste les patrons achetés', (tester) async {
+  testWidgets('Stock liste tissus et patrons achetés', (tester) async {
     final purchases = [
       PatternPurchase(
         id: 'p1',
@@ -75,38 +104,50 @@ void main() {
         purchasedAt: DateTime.utc(2026, 4, 8),
       ),
     ];
+    final fabrics = [
+      const FabricItem(
+        id: 'f1',
+        userId: 'u1',
+        name: 'Lin lavé ivoire',
+        type: 'Lin',
+        color: 'ivoire',
+        length: 2,
+      ),
+    ];
 
     await tester.pumpWidget(
       MaterialApp(
         home: StockScreen(
           role: UserRole.couturiere,
           source: _FakePatternsSource(purchases: purchases),
+          fabricsSource: _FakeFabricsSource(fabrics: fabrics),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Mes tissus (1)'), findsOneWidget);
+    expect(find.text('Lin lavé ivoire'), findsOneWidget);
     expect(find.text('Patrons achetés (1)'), findsOneWidget);
     expect(find.text('Robe Alba'), findsOneWidget);
-    expect(find.text('Maison Test'), findsOneWidget);
     expect(find.text('Possédé'), findsOneWidget);
-    expect(find.text('12 EUR'), findsOneWidget);
   });
 
-  testWidgets('Stock affiche l’erreur et Réessayer', (tester) async {
+  testWidgets('Stock affiche l’erreur tissus et Réessayer', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: StockScreen(
           role: UserRole.couturiere,
-          source: _FakePatternsSource(
-            error: const PatternsFailure('Accès refusé aux achats.'),
+          source: _FakePatternsSource(),
+          fabricsSource: _FakeFabricsSource(
+            error: const FabricsFailure('Accès refusé au stock tissus.'),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Accès refusé aux achats.'), findsOneWidget);
+    expect(find.text('Accès refusé au stock tissus.'), findsOneWidget);
     expect(find.text('Réessayer'), findsOneWidget);
   });
 }

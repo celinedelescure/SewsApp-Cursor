@@ -4,17 +4,22 @@ import '../../../core/roles/user_role.dart';
 import '../../patterns/data/pattern_purchase.dart';
 import '../../patterns/data/patterns_repository.dart';
 import '../../patterns/presentation/pattern_detail_screen.dart';
+import '../data/fabric_item.dart';
+import '../data/fabrics_repository.dart';
+import 'fabric_edit_screen.dart';
 
-/// Stock personnel couturière — patrons achetés (table `purchases`).
+/// Stock personnel couturière — tissus (`fabrics`) + patrons achetés.
 class StockScreen extends StatefulWidget {
   const StockScreen({
     super.key,
     this.role = UserRole.couturiere,
     this.source,
+    this.fabricsSource,
   });
 
   final UserRole role;
   final PatternsSource? source;
+  final FabricsSource? fabricsSource;
 
   @override
   State<StockScreen> createState() => _StockScreenState();
@@ -22,10 +27,13 @@ class StockScreen extends StatefulWidget {
 
 class _StockScreenState extends State<StockScreen> {
   late final PatternsSource _source = widget.source ?? PatternsRepository();
+  late final FabricsSource _fabricsSource =
+      widget.fabricsSource ?? FabricsRepository();
 
   bool _loading = true;
   String? _error;
   List<PatternPurchase> _purchases = const [];
+  List<FabricItem> _fabrics = const [];
 
   @override
   void initState() {
@@ -39,13 +47,23 @@ class _StockScreenState extends State<StockScreen> {
       _error = null;
     });
     try {
-      final purchases = await _source.fetchMyPurchases();
+      final purchasesFuture = _source.fetchMyPurchases();
+      final fabricsFuture = _fabricsSource.fetchMyFabrics();
+      final purchases = await purchasesFuture;
+      final fabrics = await fabricsFuture;
       if (!mounted) return;
       setState(() {
         _purchases = purchases;
+        _fabrics = fabrics;
         _loading = false;
       });
     } on PatternsFailure catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    } on FabricsFailure catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.message;
@@ -76,6 +94,21 @@ class _StockScreenState extends State<StockScreen> {
     await _load();
   }
 
+  Future<void> _openAddFabric() async {
+    final created = await Navigator.of(context).push<FabricItem>(
+      MaterialPageRoute(
+        builder: (_) => FabricEditScreen(source: _fabricsSource),
+      ),
+    );
+    if (!mounted) return;
+    if (created != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${created.titleLabel} ajouté au stock.')),
+      );
+      await _load();
+    }
+  }
+
   String? _formatDate(DateTime? date) {
     if (date == null) return null;
     final local = date.toLocal();
@@ -86,8 +119,6 @@ class _StockScreenState extends State<StockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mon stock'),
@@ -99,16 +130,21 @@ class _StockScreenState extends State<StockScreen> {
           ),
         ],
       ),
-      body: _buildBody(theme),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddFabric,
+        icon: const Icon(Icons.add),
+        label: const Text('Ajouter un tissu'),
+      ),
+      body: _buildBody(Theme.of(context)),
     );
   }
 
   Widget _buildBody(ThemeData theme) {
-    if (_loading && _purchases.isEmpty) {
+    if (_loading && _purchases.isEmpty && _fabrics.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null && _purchases.isEmpty) {
+    if (_error != null && _purchases.isEmpty && _fabrics.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -133,14 +169,16 @@ class _StockScreenState extends State<StockScreen> {
       );
     }
 
-    if (_purchases.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            SizedBox(
-              height: MediaQuery.sizeOf(context).height * 0.55,
+    final empty = _purchases.isEmpty && _fabrics.isEmpty;
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          if (empty)
+            SliverFillRemaining(
+              hasScrollBody: false,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -154,7 +192,7 @@ class _StockScreenState extends State<StockScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Aucun patron dans votre stock',
+                        'Votre stock est vide',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
@@ -162,49 +200,191 @@ class _StockScreenState extends State<StockScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Les patrons achetés via Patrons → Acheter '
-                        'apparaîtront ici. Les tissus arrivent plus tard.',
+                        'Ajoutez un tissu, ou achetez un patron '
+                        'dans l’onglet Patrons.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: _openAddFabric,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter un tissu'),
+                      ),
                     ],
                   ),
                 ),
               ),
+            )
+          else ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  'Mes tissus (${_fabrics.length})',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            if (_fabrics.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(
+                    'Aucun tissu pour l’instant. Utilisez « Ajouter un tissu ».',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList.separated(
+                  itemCount: _fabrics.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final fabric = _fabrics[index];
+                    return _FabricStockTile(fabric: fabric);
+                  },
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                child: Text(
+                  'Patrons achetés (${_purchases.length})',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            if (_purchases.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                  child: Text(
+                    'Aucun patron acheté. Rendez-vous dans Patrons → Acheter.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                sliver: SliverList.separated(
+                  itemCount: _purchases.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final purchase = _purchases[index];
+                    return _PurchaseStockTile(
+                      purchase: purchase,
+                      dateLabel: _formatDate(purchase.purchasedAt),
+                      onTap: () => _openPurchase(purchase),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FabricStockTile extends StatelessWidget {
+  const _FabricStockTile({required this.fabric});
+
+  final FabricItem fabric;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cover = fabric.imageUrl?.trim();
+    final subtitle = fabric.subtitleLabel;
+    final notes = fabric.notes?.trim();
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 72,
+                height: 72,
+                child: cover == null || cover.isEmpty
+                    ? ColoredBox(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.texture_outlined,
+                          color: theme.colorScheme.outline,
+                        ),
+                      )
+                    : Image.network(
+                        cover,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            ColoredBox(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: theme.colorScheme.outline,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fabric.titleLabel,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  if (notes != null && notes.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      notes,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: _purchases.length + 1,
-        separatorBuilder: (context, index) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                'Patrons achetés (${_purchases.length})',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            );
-          }
-          final purchase = _purchases[index - 1];
-          return _PurchaseStockTile(
-            purchase: purchase,
-            dateLabel: _formatDate(purchase.purchasedAt),
-            onTap: () => _openPurchase(purchase),
-          );
-        },
       ),
     );
   }

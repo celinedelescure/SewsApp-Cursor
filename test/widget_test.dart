@@ -20,5 +20,3 @@ void main() {
   });
 }
 
-// Env normalize tested in env_test.dart
-

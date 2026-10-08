@@ -62,18 +62,21 @@ Variables documentées dans [`.env.example`](.env.example) (le fichier `.env` lo
   - `stripe-webhook` — `checkout.session.completed` → `purchases` + `purchased_pattern_ids`
 - Commission : **10 %** founding / **20 %** standard (`profiles.commission_rate`)
 
-### Secrets Supabase (pas dans Flutter) — clics rapides
+### Stripe — état & finition
 
-1. Ouvrir https://supabase.com/dashboard/project/uwszstlhdrkxznygdloe/settings/functions  
-2. **Secrets** → ajouter `STRIPE_SECRET_KEY` = `sk_test_…` (pas `sk_live_`, pas `rk_test_`)  
-3. Ajouter `SITE_URL` = `https://www.sewsapp.com`  
-4. Déployer `create-checkout-session` + `stripe-webhook` (détail CLI : [`supabase/README.md`](supabase/README.md))  
-5. Stripe **Test mode** → Webhook → URL  
-   `https://uwszstlhdrkxznygdloe.supabase.co/functions/v1/stripe-webhook`  
-   événement `checkout.session.completed` → copier `whsec_…` → secret `STRIPE_WEBHOOK_SECRET`
+- Secrets Edge (`sk_test_`) : **OK**  
+- Checkout live (fonction V1 déjà sur `uwsz…`) : **smoke OK** (`cs_test_…`)  
+- Guide finition (deploy rebuild + webhook) : [`docs/stripe-finish-5-clicks.md`](docs/stripe-finish-5-clicks.md)
 
-`STRIPE_PUBLISHABLE_KEY` (`pk_test_…`) est optionnel pour ce Checkout redirect.  
-Détail + résultats smoke test : [`supabase/README.md`](supabase/README.md).
+**Webhook à ajouter (Stripe → Test mode → Developers → Webhooks) :**
+
+```text
+https://uwszstlhdrkxznygdloe.supabase.co/functions/v1/stripe-webhook
+```
+
+Événement : `checkout.session.completed` → copier `whsec_…` → secret Supabase `STRIPE_WEBHOOK_SECRET`.
+
+Deploy rebuild depuis l’agent : **bloqué** (pas de `SUPABASE_ACCESS_TOKEN`) — Céline déploie en local (guide 5 étapes).
 
 ## Structure
 

@@ -74,14 +74,16 @@ Sans compte Connect, le checkout fonctionne en `connect_mode: platform` (fonds p
 
 Commission : `profiles.commission_rate` (défaut **20** ; founding **10**), calculée sur le **HT** (TVA 20 %).
 
-## Smoke test agent (clés test en mémoire)
+## Smoke test
 
 | Check | Résultat |
 |-------|----------|
-| Clé `sk_test_` valide | OK (compte plateforme FR, sessions `cs_test_…`) |
-| Comptes Connect Express sur **ce** compte Stripe Test | **0** listés via API |
-| `POST /v1/checkout/sessions` (12 € EUR, platform-only) | **OK** — URL `checkout.stripe.com`, `payment_status=unpaid` |
-| Deploy Edge Functions vers `uwsz…` depuis l’agent | **Non** (pas de lien CLI / service_role prod sur cette VM) |
-| Secret webhook `whsec_` | **Pas encore** fourni — à créer à l’étape webhook |
+| Secrets Stripe dans Supabase | **OK** (confirmé Céline) |
+| `POST …/functions/v1/create-checkout-session` (fonction **V1** déjà live) | **OK** — renvoie `url` Checkout `cs_test_…` pour un patron réel |
+| Clé `sk_test_` via API Stripe directe | OK |
+| Comptes Connect Express sur ce Stripe Test | **0** (split destination non exercé) |
+| Deploy depuis l’agent de la version rebuild (JWT) | **Bloqué** — manque `SUPABASE_ACCESS_TOKEN` |
+| Secret webhook `whsec_` | **À créer** (étape webhook ci-dessus) |
 
-Tant que les fonctions ne sont pas déployées avec `STRIPE_SECRET_KEY`, Flutter affiche **Paiement en mode test**.
+La fonction **V1** live attend `{ pattern_id, user_id }`. Le client Flutter envoie les deux.  
+Redéployer la version de ce repo (JWT + garde-fous) dès que vous avez un access token CLI — voir [`docs/stripe-finish-5-clicks.md`](../docs/stripe-finish-5-clicks.md).

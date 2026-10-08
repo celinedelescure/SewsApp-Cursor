@@ -78,8 +78,11 @@ class StripeCheckoutService implements PatternCheckout {
       );
     }
 
+    // `user_id` : requis par la fonction V1 déjà déployée sur uwsz… ;
+    // la version rebuild (JWT) ignore le body et lit auth.getUser().
     final body = <String, dynamic>{
       'pattern_id': patternId,
+      'user_id': user.id,
       if (successUrl != null && successUrl.isNotEmpty) 'success_url': successUrl,
       if (cancelUrl != null && cancelUrl.isNotEmpty) 'cancel_url': cancelUrl,
     };

@@ -126,6 +126,10 @@ class AuthRepository implements AuthApi {
     if (raw.contains('signup') && raw.contains('disabled')) {
       return 'Les inscriptions sont désactivées pour le moment.';
     }
+    if (raw.contains('invalid path') || code == 'pgrst125') {
+      return 'Configuration Supabase incorrecte (URL). '
+          'Utilisez l’URL racine du projet, sans /rest/v1.';
+    }
     if (e.statusCode == '400' || e.statusCode == '401') {
       return 'Identifiants invalides. Vérifiez e-mail et mot de passe.';
     }

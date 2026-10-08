@@ -11,7 +11,7 @@
 class Env {
   Env._();
 
-  static const supabaseUrl = String.fromEnvironment(
+  static const _rawSupabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
     defaultValue: '',
   );
@@ -24,6 +24,25 @@ class Env {
   /// Projet Supabase production (données utilisateurs).
   static const supabaseProjectRefHint = 'uwszstlhdrkxznygdloe';
 
+  /// URL racine du projet (sans `/rest/v1` ni slash final).
+  ///
+  /// Certains secrets injectés pointent vers PostgREST ; Auth a besoin de la
+  /// racine `https://<ref>.supabase.co`.
+  static String get supabaseUrl => normalizeSupabaseUrl(_rawSupabaseUrl);
+
   static bool get hasSupabaseConfig =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+
+  static String normalizeSupabaseUrl(String raw) {
+    var url = raw.trim();
+    if (url.isEmpty) return '';
+    while (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    const restSuffix = '/rest/v1';
+    if (url.toLowerCase().endsWith(restSuffix)) {
+      url = url.substring(0, url.length - restSuffix.length);
+    }
+    return url;
+  }
 }

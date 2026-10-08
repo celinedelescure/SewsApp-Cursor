@@ -19,3 +19,6 @@ void main() {
     expect(UserRoleX.fromAccountType('inconnu'), UserRole.couturiere);
   });
 }
+
+// Env normalize tested in env_test.dart
+

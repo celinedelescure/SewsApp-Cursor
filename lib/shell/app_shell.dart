@@ -59,7 +59,10 @@ class _AppShellState extends State<AppShell> {
             label: 'Patrons',
             icon: Icons.picture_as_pdf_outlined,
             selectedIcon: Icons.picture_as_pdf,
-            builder: (_) => PatternsMarketplaceScreen(role: role),
+            builder: (_) => PatternsMarketplaceScreen(
+              role: role,
+              profile: widget.profile,
+            ),
           ),
           _ShellDestination(
             label: 'Tissus',
@@ -97,7 +100,10 @@ class _AppShellState extends State<AppShell> {
             label: 'Mes patrons',
             icon: Icons.design_services_outlined,
             selectedIcon: Icons.design_services,
-            builder: (_) => PatternsMarketplaceScreen(role: role),
+            builder: (_) => PatternsMarketplaceScreen(
+              role: role,
+              profile: widget.profile,
+            ),
           ),
           _ShellDestination(
             label: 'Profil',

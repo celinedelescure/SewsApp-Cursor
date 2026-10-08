@@ -2,7 +2,7 @@
 
 Rebuild greenfield de [sewsapp.com](https://www.sewsapp.com) : app couture (feed, marketplace patrons, marchand de tissus) en **Flutter** + **Supabase** + **Stripe Connect**.
 
-Cette version branche la **connexion / inscription**, le **fil d’actualité** et la **publication d’un projet** sur Supabase (clé **anon** uniquement).
+Cette version branche la **connexion / inscription**, le **fil d’actualité**, la **publication d’un projet** et le **catalogue patrons (Patrons)** sur Supabase (clé **anon** uniquement).
 
 ## Prérequis
 
@@ -43,7 +43,10 @@ Variables documentées dans [`.env.example`](.env.example) (le fichier `.env` lo
 5. Tirez vers le bas pour actualiser ; filtres type (Robes, Hauts…) en haut.
 6. Appuyez sur **Publier** (ou l’icône +) → titre / légende / description → **Publier**.  
    L’upload d’image vers Storage peut être refusé par RLS : dans ce cas, collez une **URL** d’image ou publiez sans photo.
-7. Onglet **Profil** → **Se déconnecter**.
+7. Onglet **Patrons** (couturière) : catalogue publié, fiche détail, bouton **Acheter** (stub Stripe — paiement à brancher).  
+   Si vous avez déjà des achats (`purchases` / `purchased_pattern_ids`), le badge **Possédé** s’affiche.
+8. Compte **Designer** → onglet **Mes patrons** : liste de vos fiches + **Nouveau** (nom, prix, description, URL image).
+9. Onglet **Profil** → **Se déconnecter**.
 
 | Valeur en base (`account_type`) | Affiché dans l’app |
 |---------------------------------|--------------------|
@@ -61,7 +64,7 @@ lib/
   features/
     auth/         # login, signup, session, lecture profiles
     feed/         # fil posts + publier un projet + filtres type
-    patterns/
+    patterns/     # catalogue patrons + détail + fiche designer + stub achat
     fabric_merchant/
     profile/      # profil + déconnexion + stock
   shell/          # NavigationBar selon le rôle
@@ -70,4 +73,4 @@ docs/architecture.md
 
 ## Hors scope de ce PR
 
-Likes/commentaires, Stripe live, migration / modification du schéma Supabase prod.
+Likes/commentaires, Stripe checkout live (Edge Function + Connect), migration / modification du schéma Supabase prod.

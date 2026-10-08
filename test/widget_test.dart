@@ -19,3 +19,4 @@ void main() {
     expect(UserRoleX.fromAccountType('inconnu'), UserRole.couturiere);
   });
 }
+

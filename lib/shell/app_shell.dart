@@ -74,7 +74,7 @@ class _AppShellState extends State<AppShell> {
             label: 'Stock',
             icon: Icons.inventory_2_outlined,
             selectedIcon: Icons.inventory_2,
-            builder: (_) => const StockScreen(),
+            builder: (_) => StockScreen(role: role),
           ),
           _ShellDestination(
             label: 'Profil',

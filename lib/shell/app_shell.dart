@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/roles/user_role.dart';
+import '../features/auth/data/user_profile.dart';
 import '../features/fabric_merchant/presentation/fabric_merchant_screen.dart';
 import '../features/feed/presentation/feed_screen.dart';
 import '../features/patterns/presentation/patterns_marketplace_screen.dart';
@@ -21,16 +22,20 @@ class _ShellDestination {
   final WidgetBuilder builder;
 }
 
-/// Shell navigable selon le rôle (placeholders uniquement).
+/// Shell navigable selon le rôle (placeholders métier + auth réelle).
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
     required this.role,
-    this.onChangeRole,
+    this.profile,
+    this.profileNotice,
+    this.onLogout,
   });
 
   final UserRole role;
-  final VoidCallback? onChangeRole;
+  final UserProfile? profile;
+  final String? profileNotice;
+  final Future<void> Function()? onLogout;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -54,7 +59,10 @@ class _AppShellState extends State<AppShell> {
             label: 'Patrons',
             icon: Icons.picture_as_pdf_outlined,
             selectedIcon: Icons.picture_as_pdf,
-            builder: (_) => PatternsMarketplaceScreen(role: role),
+            builder: (_) => PatternsMarketplaceScreen(
+              role: role,
+              profile: widget.profile,
+            ),
           ),
           _ShellDestination(
             label: 'Tissus',
@@ -66,7 +74,7 @@ class _AppShellState extends State<AppShell> {
             label: 'Stock',
             icon: Icons.inventory_2_outlined,
             selectedIcon: Icons.inventory_2,
-            builder: (_) => const StockScreen(),
+            builder: (_) => StockScreen(role: role),
           ),
           _ShellDestination(
             label: 'Profil',
@@ -74,7 +82,9 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icons.person,
             builder: (_) => ProfileScreen(
               role: role,
-              onChangeRole: widget.onChangeRole,
+              profile: widget.profile,
+              profileNotice: widget.profileNotice,
+              onLogout: widget.onLogout,
             ),
           ),
         ];
@@ -90,7 +100,10 @@ class _AppShellState extends State<AppShell> {
             label: 'Mes patrons',
             icon: Icons.design_services_outlined,
             selectedIcon: Icons.design_services,
-            builder: (_) => PatternsMarketplaceScreen(role: role),
+            builder: (_) => PatternsMarketplaceScreen(
+              role: role,
+              profile: widget.profile,
+            ),
           ),
           _ShellDestination(
             label: 'Profil',
@@ -98,7 +111,9 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icons.person,
             builder: (_) => ProfileScreen(
               role: role,
-              onChangeRole: widget.onChangeRole,
+              profile: widget.profile,
+              profileNotice: widget.profileNotice,
+              onLogout: widget.onLogout,
             ),
           ),
         ];
@@ -122,7 +137,9 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icons.person,
             builder: (_) => ProfileScreen(
               role: role,
-              onChangeRole: widget.onChangeRole,
+              profile: widget.profile,
+              profileNotice: widget.profileNotice,
+              onLogout: widget.onLogout,
             ),
           ),
         ];

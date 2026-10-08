@@ -62,24 +62,18 @@ Variables documentées dans [`.env.example`](.env.example) (le fichier `.env` lo
   - `stripe-webhook` — `checkout.session.completed` → `purchases` + `purchased_pattern_ids`
 - Commission : **10 %** founding / **20 %** standard (`profiles.commission_rate`)
 
-### Secrets Supabase (pas dans Flutter)
+### Secrets Supabase (pas dans Flutter) — clics rapides
 
-**Utilisez le mode Test Stripe** (interrupteur Dashboard → Test mode) : clés `sk_test_` / `pk_test_`.  
-Les clés **live** (`sk_live_`) débitent de vrais clients — hors scope tant que le parcours n’est pas validé.
+1. Ouvrir https://supabase.com/dashboard/project/uwszstlhdrkxznygdloe/settings/functions  
+2. **Secrets** → ajouter `STRIPE_SECRET_KEY` = `sk_test_…` (pas `sk_live_`, pas `rk_test_`)  
+3. Ajouter `SITE_URL` = `https://www.sewsapp.com`  
+4. Déployer `create-checkout-session` + `stripe-webhook` (détail CLI : [`supabase/README.md`](supabase/README.md))  
+5. Stripe **Test mode** → Webhook → URL  
+   `https://uwszstlhdrkxznygdloe.supabase.co/functions/v1/stripe-webhook`  
+   événement `checkout.session.completed` → copier `whsec_…` → secret `STRIPE_WEBHOOK_SECRET`
 
-Dashboard Supabase → Edge Functions → Secrets (projet `uwszstlhdrkxznygdloe`) :
-
-1. `STRIPE_SECRET_KEY` = `sk_test_…`
-2. `STRIPE_WEBHOOK_SECRET` = `whsec_…` (endpoint créé **en Test**)
-3. `SITE_URL` = `https://www.sewsapp.com` (recommandé)
-
-Puis déployer (voir [`supabase/README.md`](supabase/README.md)) et créer le webhook Stripe **test** vers  
-`https://uwszstlhdrkxznygdloe.supabase.co/functions/v1/stripe-webhook`  
-(événement `checkout.session.completed`).
-
-`STRIPE_PUBLISHABLE_KEY` (`pk_test_…`) — optionnel pour ce Checkout redirect.
-
-**Note agents Cursor :** les secrets saisis dans l’UI Cursor ne s’injectent que si un *Cloud environment* est lié. Sans cela, le code + README suffisent ; Céline configure les secrets **dans Supabase** (ou colle un `sk_test_` en chat si besoin de deploy depuis l’agent).
+`STRIPE_PUBLISHABLE_KEY` (`pk_test_…`) est optionnel pour ce Checkout redirect.  
+Détail + résultats smoke test : [`supabase/README.md`](supabase/README.md).
 
 ## Structure
 

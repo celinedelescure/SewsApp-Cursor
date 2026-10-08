@@ -48,7 +48,7 @@ class PatternPurchase {
       userId: map['user_id'] as String? ?? '',
       patternId: map['pattern_id'] as String? ?? '',
       patternName: map['pattern_name'] as String?,
-      brand: map['brand'] as String?,
+      brand: (map['brand'] as String?) ?? (map['pattern_brand'] as String?),
       pricePaid: (map['price_paid'] as num?)?.toDouble(),
       currency: (map['currency'] as String?)?.trim().isNotEmpty == true
           ? (map['currency'] as String).trim()

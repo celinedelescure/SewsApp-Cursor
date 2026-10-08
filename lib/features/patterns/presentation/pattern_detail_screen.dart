@@ -1,12 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/commission.dart';
 import '../../../core/roles/user_role.dart';
 import '../data/pattern_listing.dart';
 import '../data/patterns_repository.dart';
+import '../data/stripe_checkout_service.dart';
 import 'pattern_edit_screen.dart';
 
-/// Fiche détail patron + stub achat Stripe.
+/// Fiche détail patron + checkout Stripe Connect (Edge Function).
 class PatternDetailScreen extends StatefulWidget {
   const PatternDetailScreen({
     super.key,
@@ -14,6 +16,7 @@ class PatternDetailScreen extends StatefulWidget {
     required this.role,
     this.initialPattern,
     this.source,
+    this.checkout,
     this.owned = false,
     this.isOwner = false,
   });
@@ -22,6 +25,7 @@ class PatternDetailScreen extends StatefulWidget {
   final UserRole role;
   final PatternListing? initialPattern;
   final PatternsSource? source;
+  final PatternCheckout? checkout;
   final bool owned;
   final bool isOwner;
 
@@ -34,6 +38,7 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
 
   PatternListing? _pattern;
   bool _loading = true;
+  bool _purchasing = false;
   String? _error;
   late final bool _owned = widget.owned;
 
@@ -79,31 +84,113 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
     }
   }
 
-  Future<void> _showPurchaseStub() async {
-    final pattern = _pattern;
-    if (pattern == null) return;
+  PatternCheckout get _checkout =>
+      widget.checkout ?? StripeCheckoutService();
 
+  Future<void> _startPurchase() async {
+    final pattern = _pattern;
+    if (pattern == null || _purchasing || _owned) return;
+
+    setState(() => _purchasing = true);
+
+    String? successUrl;
+    String? cancelUrl;
+    if (kIsWeb) {
+      final base = Uri.base.origin;
+      successUrl =
+          '$base/?purchase=success&pattern_id=${Uri.encodeComponent(pattern.id)}';
+      cancelUrl = '$base/?purchase=cancelled';
+    }
+
+    final result = await _checkout.createCheckoutSession(
+      patternId: pattern.id,
+      successUrl: successUrl,
+      cancelUrl: cancelUrl,
+    );
+
+    if (!mounted) return;
+    setState(() => _purchasing = false);
+
+    switch (result) {
+      case CheckoutRedirect(:final url):
+        final opened = await _checkout.openCheckoutUrl(url);
+        if (!mounted) return;
+        if (!opened) {
+          await _showMessageDialog(
+            title: 'Paiement',
+            body:
+                'Impossible d’ouvrir la page Stripe. '
+                'Autorisez les fenêtres / le navigateur, puis réessayez.\n\n$url',
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Paiement ouvert dans le navigateur. '
+                'Après succès, tirez pour actualiser vos achats.',
+              ),
+            ),
+          );
+        }
+      case CheckoutUnavailable(:final message):
+        await _showUnavailableDialog(pattern, message);
+      case CheckoutFailure(:final message):
+        await _showMessageDialog(title: 'Achat impossible', body: message);
+    }
+  }
+
+  Future<void> _showUnavailableDialog(
+    PatternListing pattern,
+    String serverMessage,
+  ) async {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Acheter ce patron'),
+        title: const Text('Paiement en mode test'),
         content: SingleChildScrollView(
           child: Text(
-            'Le paiement Stripe n’est pas encore branché dans cette version.\n\n'
-            'Prochaine étape : checkout Stripe Connect (Edge Function), '
-            'commission SewsApp '
+            'Le checkout Stripe Connect n’est pas encore disponible côté serveur.\n\n'
+            '$serverMessage\n\n'
+            'Pour activer le paiement : basculez Stripe en mode Test '
+            '(pas Live), ajoutez STRIPE_SECRET_KEY (sk_test_…) et '
+            'STRIPE_WEBHOOK_SECRET dans Supabase Edge Functions, '
+            'déployez create-checkout-session + stripe-webhook, '
+            'puis créez l’endpoint webhook en mode Test.\n\n'
+            'Les clés live (sk_live_) débiteraient de vrais clients — '
+            'à éviter jusqu’à validation du parcours.\n\n'
+            'Commission SewsApp : '
             '${DesignerCommission.foundingRatePercent} % founding '
             '(${DesignerCommission.foundingQuota} premières) / '
-            '${DesignerCommission.standardRatePercent} % standard, '
-            'puis livraison PDF.\n\n'
+            '${DesignerCommission.standardRatePercent} % standard '
+            '(calculée sur le HT, TVA 20 %).\n\n'
             'Patron : ${pattern.name}\n'
-            'Prix : ${pattern.priceLabel}',
+            'Prix : ${pattern.priceLabel}\n\n'
+            'Aucun achat fictif n’est écrit en base.',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Compris'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showMessageDialog({
+    required String title,
+    required String body,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(child: Text(body)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -276,7 +363,7 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
                                   '${DesignerCommission.foundingRatePercent} % '
                                   'founding / '
                                   '${DesignerCommission.standardRatePercent} % '
-                                  'standard (à brancher avec Stripe Connect).',
+                                  'standard sur HT (Stripe Connect).',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -289,16 +376,32 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
                                 )
                               else if (widget.role != UserRole.designer)
                                 FilledButton.icon(
-                                  onPressed: _showPurchaseStub,
-                                  icon: const Icon(Icons.shopping_bag_outlined),
-                                  label: const Text('Acheter'),
+                                  onPressed:
+                                      _purchasing ? null : _startPurchase,
+                                  icon: _purchasing
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.shopping_bag_outlined),
+                                  label: Text(
+                                    _purchasing
+                                        ? 'Ouverture du paiement…'
+                                        : 'Acheter',
+                                  ),
                                 )
                               else
                                 OutlinedButton.icon(
-                                  onPressed: _showPurchaseStub,
-                                  icon: const Icon(Icons.info_outline),
-                                  label: const Text(
-                                    'Achat (bientôt via Stripe)',
+                                  onPressed:
+                                      _purchasing ? null : _startPurchase,
+                                  icon: const Icon(Icons.shopping_bag_outlined),
+                                  label: Text(
+                                    _purchasing
+                                        ? 'Ouverture du paiement…'
+                                        : 'Acheter (Stripe Connect)',
                                   ),
                                 ),
                             ],

@@ -2,7 +2,7 @@
 
 Rebuild greenfield de [sewsapp.com](https://www.sewsapp.com) : app couture (feed, marketplace patrons, marchand de tissus) en **Flutter** + **Supabase** + **Stripe Connect**.
 
-Cette version branche la **connexion / inscription** sur Supabase (clé **anon** uniquement).
+Cette version branche la **connexion / inscription** et le **fil d’actualité** (posts) sur Supabase (clé **anon** uniquement).
 
 ## Prérequis
 
@@ -39,8 +39,9 @@ Variables documentées dans [`.env.example`](.env.example) (le fichier `.env` lo
 1. Lancez l’app avec les `--dart-define` ci-dessus.
 2. Sur l’écran **Se connecter**, saisissez l’e-mail et le mot de passe d’un compte existant.
 3. Ou appuyez sur **Créer un compte** (si Auth autorise les inscriptions).
-4. Après connexion, le menu affiche le shell selon votre rôle (`profiles.account_type`).
-5. Onglet **Profil** → **Se déconnecter**.
+4. Après connexion, l’onglet **Feed** charge les posts prod (`posts` + auteur `profiles`).
+5. Tirez vers le bas pour actualiser ; filtres type (Robes, Hauts…) en haut.
+6. Onglet **Profil** → **Se déconnecter**.
 
 | Valeur en base (`account_type`) | Affiché dans l’app |
 |---------------------------------|--------------------|
@@ -57,7 +58,7 @@ lib/
   core/           # config (--dart-define), client Supabase, thème, rôles
   features/
     auth/         # login, signup, session, lecture profiles
-    feed/
+    feed/         # fil posts + cartes + filtres type
     patterns/
     fabric_merchant/
     profile/      # profil + déconnexion + stock
@@ -67,4 +68,4 @@ docs/architecture.md
 
 ## Hors scope de ce PR
 
-Feed réel, Stripe live, migration / modification du schéma Supabase prod.
+Publication de posts, likes/commentaires, Stripe live, migration / modification du schéma Supabase prod.

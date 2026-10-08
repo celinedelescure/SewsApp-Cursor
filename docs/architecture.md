@@ -25,7 +25,7 @@ Greenfield : **pas** de reprise du code React/Capacitor V1.
 Feature-first sous `lib/features/` :
 
 - `auth` — login, signup, gate session, repository
-- `feed` — projets & inspiration (placeholder)
+- `feed` — fil `posts` + auteur (`profiles!author_id`), pull-to-refresh, filtres type
 - `patterns` — marketplace patrons PDF (placeholder)
 - `fabric_merchant` — catalogue tissus (placeholder)
 - `profile` — profil + stock + logout
@@ -47,9 +47,17 @@ Prod données : projet Supabase `uwszstlhdrkxznygdloe`.
 - **Couturière** · **Designer** · **Marchand tissus**
 - Designers : 10 % founding (quota 20) / 20 % standard — `lib/core/constants/commission.dart`
 
+## Feed (cette version)
+
+- Source : table `posts` (anon), join `author:profiles!author_id`
+- Affiche : image (`image_url` / `images`), auteur, caption ou patron, likes
+- États FR : chargement, vide, erreur + pull-to-refresh
+- Filtres simples sur `type` (Dress, Top, …) — stub avancé plus tard
+
 ## Prochaines phases
 
-1. Feed / stock / marketplace branchés sur les tables prod
-2. Edge Functions Stripe
-3. Module marchand tissus
-4. Staging dédié avant tout cutover schéma
+1. Stock / marketplace branchés sur les tables prod
+2. Publication, likes, commentaires
+3. Edge Functions Stripe
+4. Module marchand tissus
+5. Staging dédié avant tout cutover schéma

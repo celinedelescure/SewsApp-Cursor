@@ -25,4 +25,26 @@ extension UserRoleX on UserRole {
         UserRole.marchandTissus =>
           'Catalogue tissus, stock et ventes natives (pas Shopify).',
       };
+
+  /// Mappe `profiles.account_type` (prod) vers le rôle Flutter.
+  ///
+  /// Valeurs live : `Regular User`, `Designer`, `Seller`.
+  static UserRole fromAccountType(String? accountType) {
+    final normalized = (accountType ?? '').trim().toLowerCase();
+    switch (normalized) {
+      case 'designer':
+        return UserRole.designer;
+      case 'seller':
+      case 'marchand':
+      case 'marchand de tissus':
+      case 'marchandtissus':
+        return UserRole.marchandTissus;
+      case 'regular user':
+      case 'couturiere':
+      case 'couturière':
+      case 'user':
+      default:
+        return UserRole.couturiere;
+    }
+  }
 }

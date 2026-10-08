@@ -23,10 +23,13 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   StreamSubscription<AuthState>? _authSub;
+  final GlobalKey<NavigatorState> _authNavKey = GlobalKey<NavigatorState>();
+
   bool _booting = true;
   bool _loadingProfile = false;
   UserProfile? _profile;
   String? _profileError;
+  String? _sessionUserId;
 
   @override
   void initState() {
@@ -37,6 +40,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _bootstrap() async {
     final session = widget.repository.currentSession;
     if (session != null) {
+      _sessionUserId = session.user.id;
       await _loadProfile(session.user);
     }
     if (!mounted) return;
@@ -45,14 +49,27 @@ class _AuthGateState extends State<AuthGate> {
     _authSub = widget.repository.authStateChanges.listen((data) async {
       final session = data.session;
       if (session == null) {
+        // Déjà déconnecté : ne pas setState (sinon remount login →
+        // perte des erreurs FR et de la pile « Créer un compte »).
+        if (_sessionUserId == null && _profile == null && !_loadingProfile) {
+          return;
+        }
         if (!mounted) return;
         setState(() {
+          _sessionUserId = null;
           _profile = null;
           _profileError = null;
           _loadingProfile = false;
         });
         return;
       }
+
+      final sameUser = _sessionUserId == session.user.id && _profile != null;
+      if (sameUser && data.event == AuthChangeEvent.tokenRefreshed) {
+        return;
+      }
+
+      _sessionUserId = session.user.id;
       await _loadProfile(session.user);
     });
   }
@@ -117,7 +134,16 @@ class _AuthGateState extends State<AuthGate> {
 
     final profile = _profile;
     if (profile == null) {
-      return LoginScreen(repository: widget.repository);
+      // Navigator dédié : conserve login/signup même si AuthGate rebuild.
+      return Navigator(
+        key: _authNavKey,
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => LoginScreen(repository: widget.repository),
+          );
+        },
+      );
     }
 
     return AppShell(

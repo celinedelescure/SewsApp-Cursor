@@ -92,8 +92,10 @@ class AuthRepository {
 
   String _mapAuthError(AuthException e) {
     final raw = e.message.toLowerCase();
+    final code = (e.code ?? '').toLowerCase();
     if (raw.contains('invalid login credentials') ||
-        raw.contains('invalid_credentials')) {
+        raw.contains('invalid_credentials') ||
+        code == 'invalid_credentials') {
       return 'E-mail ou mot de passe incorrect.';
     }
     if (raw.contains('email not confirmed')) {

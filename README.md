@@ -28,6 +28,7 @@ flutter run -d chrome \
 ```
 
 Remplacez `VOTRE_CLE_ANON` par la clé anon (elle ressemble à un long jeton JWT).  
+Important : `SUPABASE_URL` doit être la **racine** du projet (`https://….supabase.co`), pas l’URL `/rest/v1`.  
 Sur téléphone / simulateur : retirez `-d chrome` ou choisissez `-d ios` / `-d android`.
 
 Sans `--dart-define`, l’app affiche un écran « configuration manquante » (pas de secrets dans le dépôt).

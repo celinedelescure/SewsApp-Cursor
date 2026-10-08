@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shell/app_shell.dart';
+import '../data/auth_api.dart';
 import '../data/auth_repository.dart';
 import '../data/user_profile.dart';
 import 'login_screen.dart';
@@ -15,7 +16,7 @@ class AuthGate extends StatefulWidget {
     required this.repository,
   });
 
-  final AuthRepository repository;
+  final AuthApi repository;
 
   @override
   State<AuthGate> createState() => _AuthGateState();

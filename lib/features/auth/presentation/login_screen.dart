@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/auth_api.dart';
 import '../data/auth_repository.dart';
 import 'signup_screen.dart';
 
@@ -10,7 +11,7 @@ class LoginScreen extends StatefulWidget {
     required this.repository,
   });
 
-  final AuthRepository repository;
+  final AuthApi repository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/auth_api.dart';
 import '../data/auth_repository.dart';
 
 /// Inscription e-mail / mot de passe (si Auth l'autorise côté projet).
@@ -9,7 +10,7 @@ class SignupScreen extends StatefulWidget {
     required this.repository,
   });
 
-  final AuthRepository repository;
+  final AuthApi repository;
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_client.dart';
+import 'auth_api.dart';
 import 'user_profile.dart';
 
 /// Erreurs auth présentées à l'utilisateur (messages FR).
@@ -14,18 +15,22 @@ class AuthFailure implements Exception {
 }
 
 /// Accès Auth + lecture `profiles` (clé anon uniquement).
-class AuthRepository {
+class AuthRepository implements AuthApi {
   AuthRepository({SupabaseClient? client})
       : _client = client ?? SupabaseBootstrap.client;
 
   final SupabaseClient _client;
 
+  @override
   Session? get currentSession => _client.auth.currentSession;
 
+  @override
   User? get currentUser => _client.auth.currentUser;
 
+  @override
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
+  @override
   Future<AuthResponse> signIn({
     required String email,
     required String password,
@@ -44,6 +49,7 @@ class AuthRepository {
     }
   }
 
+  @override
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -62,6 +68,7 @@ class AuthRepository {
     }
   }
 
+  @override
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
@@ -73,6 +80,7 @@ class AuthRepository {
   }
 
   /// Charge le profil ; en cas d'échec RLS / absence, retourne un fallback.
+  @override
   Future<UserProfile> fetchProfile(User user) async {
     try {
       final row = await _client

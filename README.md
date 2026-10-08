@@ -2,63 +2,70 @@
 
 Rebuild greenfield de [sewsapp.com](https://www.sewsapp.com) : app couture (feed, marketplace patrons, marchand de tissus) en **Flutter** + **Supabase** + **Stripe Connect**.
 
-Ce dépôt contient le **scaffold** (structure, shell multi-rôles, stub Supabase). Pas encore d’auth réelle ni de paiements live.
+Cette version branche la **connexion / inscription** et le **fil d’actualité** (posts) sur Supabase (clé **anon** uniquement).
 
 ## Prérequis
 
 - [Flutter](https://docs.flutter.dev/get-started/install) stable (3.24+ recommandé)
-- Xcode (iOS) et/ou Android Studio (Android)
+- Un compte SewsApp existant **ou** la possibilité de créer un compte (si les inscriptions sont ouvertes dans Auth)
 
 ```bash
 flutter doctor
 ```
 
-## Lancer en local
+## Lancer en local (simple)
+
+1. Récupérer la clé **anon** dans le dashboard Supabase → *Project Settings* → *API*  
+   (ne jamais utiliser ni coller la clé `service_role` dans l’app).
+2. Dans un terminal, à la racine du projet :
 
 ```bash
 flutter pub get
 
-# Sans secrets (UI navigable, mode placeholder)
-flutter run
-
-# Avec Supabase (clés locales uniquement — jamais committer)
-flutter run \
-  --dart-define=SUPABASE_URL=https://YOUR_REF.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
+flutter run -d chrome \
+  --dart-define=SUPABASE_URL=https://uwszstlhdrkxznygdloe.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=VOTRE_CLE_ANON
 ```
 
-Variables documentées dans [`.env.example`](.env.example).  
-Réf. prod données utilisateurs (migration plus tard) : `pbeyfeepdrlfjxanvvwa`.
+Remplacez `VOTRE_CLE_ANON` par la clé anon (elle ressemble à un long jeton JWT).  
+Sur téléphone / simulateur : retirez `-d chrome` ou choisissez `-d ios` / `-d android`.
 
-Cibles utiles : `flutter run -d chrome`, `flutter run -d ios`, `flutter run -d android`.
+Sans `--dart-define`, l’app affiche un écran « configuration manquante » (pas de secrets dans le dépôt).
 
-## Rôles (shell démo)
+Variables documentées dans [`.env.example`](.env.example) (le fichier `.env` local est ignoré par git).
 
-| Rôle | Navigation |
-|------|------------|
-| Couturière | Feed · Patrons · Tissus · Stock · Profil |
-| Designer | Feed · Mes patrons · Profil |
-| Marchand de tissus | Catalogue · Feed · Profil |
+## Se connecter (pour tester)
 
-Commission designers (constantes produit) : **10 %** founding (20 premières) / **20 %** ensuite. Vente tissus : **native Stripe Connect** (pas Shopify).
+1. Lancez l’app avec les `--dart-define` ci-dessus.
+2. Sur l’écran **Se connecter**, saisissez l’e-mail et le mot de passe d’un compte existant.
+3. Ou appuyez sur **Créer un compte** (si Auth autorise les inscriptions).
+4. Après connexion, l’onglet **Feed** charge les posts prod (`posts` + auteur `profiles`).
+5. Tirez vers le bas pour actualiser ; filtres type (Robes, Hauts…) en haut.
+6. Onglet **Profil** → **Se déconnecter**.
+
+| Valeur en base (`account_type`) | Affiché dans l’app |
+|---------------------------------|--------------------|
+| `Regular User` | Couturière |
+| `Designer` | Designer |
+| `Seller` | Marchand de tissus |
+
+Si le profil est introuvable, l’app utilise **Couturière** par défaut.
 
 ## Structure
 
 ```
 lib/
-  core/           # config, supabase stub, thème, rôles, commission
+  core/           # config (--dart-define), client Supabase, thème, rôles
   features/
-    auth/         # sélection de rôle (placeholder)
-    feed/
-    patterns/     # marketplace patrons
+    auth/         # login, signup, session, lecture profiles
+    feed/         # fil posts + cartes + filtres type
+    patterns/
     fabric_merchant/
-    profile/      # profil + stock couturière
-  shell/          # NavigationBar role-aware
+    profile/      # profil + déconnexion + stock
+  shell/          # NavigationBar selon le rôle
 docs/architecture.md
 ```
 
-Voir [docs/architecture.md](docs/architecture.md).
-
 ## Hors scope de ce PR
 
-Auth complète, feed réel, Stripe live, migration schema Supabase, stores.
+Publication de posts, likes/commentaires, Stripe live, migration / modification du schéma Supabase prod.

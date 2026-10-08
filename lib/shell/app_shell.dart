@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/roles/user_role.dart';
+import '../features/auth/data/user_profile.dart';
 import '../features/fabric_merchant/presentation/fabric_merchant_screen.dart';
 import '../features/feed/presentation/feed_screen.dart';
 import '../features/patterns/presentation/patterns_marketplace_screen.dart';
@@ -21,16 +22,20 @@ class _ShellDestination {
   final WidgetBuilder builder;
 }
 
-/// Shell navigable selon le rôle (placeholders uniquement).
+/// Shell navigable selon le rôle (placeholders métier + auth réelle).
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
     required this.role,
-    this.onChangeRole,
+    this.profile,
+    this.profileNotice,
+    this.onLogout,
   });
 
   final UserRole role;
-  final VoidCallback? onChangeRole;
+  final UserProfile? profile;
+  final String? profileNotice;
+  final Future<void> Function()? onLogout;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -74,7 +79,9 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icons.person,
             builder: (_) => ProfileScreen(
               role: role,
-              onChangeRole: widget.onChangeRole,
+              profile: widget.profile,
+              profileNotice: widget.profileNotice,
+              onLogout: widget.onLogout,
             ),
           ),
         ];
@@ -98,7 +105,9 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icons.person,
             builder: (_) => ProfileScreen(
               role: role,
-              onChangeRole: widget.onChangeRole,
+              profile: widget.profile,
+              profileNotice: widget.profileNotice,
+              onLogout: widget.onLogout,
             ),
           ),
         ];
@@ -122,7 +131,9 @@ class _AppShellState extends State<AppShell> {
             selectedIcon: Icons.person,
             builder: (_) => ProfileScreen(
               role: role,
-              onChangeRole: widget.onChangeRole,
+              profile: widget.profile,
+              profileNotice: widget.profileNotice,
+              onLogout: widget.onLogout,
             ),
           ),
         ];

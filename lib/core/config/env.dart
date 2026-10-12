@@ -21,8 +21,8 @@ class Env {
     defaultValue: '',
   );
 
-  /// Production data lives in this project (migration later). Scaffold only.
-  static const supabaseProjectRefHint = 'pbeyfeepdrlfjxanvvwa';
+  /// Projet Supabase production (données utilisateurs).
+  static const supabaseProjectRefHint = 'uwszstlhdrkxznygdloe';
 
   static bool get hasSupabaseConfig =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

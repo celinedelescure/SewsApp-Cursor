@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 
-import 'core/roles/user_role.dart';
+import 'core/supabase/supabase_client.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/role_picker_screen.dart';
-import 'shell/app_shell.dart';
+import 'features/auth/data/auth_repository.dart';
+import 'features/auth/presentation/auth_gate.dart';
+import 'features/auth/presentation/missing_config_screen.dart';
 
-/// Racine SewsApp : sélection de rôle (démo) puis shell navigable.
-class SewsApp extends StatefulWidget {
+/// Racine SewsApp : auth Supabase puis shell selon le rôle du profil.
+class SewsApp extends StatelessWidget {
   const SewsApp({super.key});
-
-  @override
-  State<SewsApp> createState() => _SewsAppState();
-}
-
-class _SewsAppState extends State<SewsApp> {
-  UserRole? _role;
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +16,9 @@ class _SewsAppState extends State<SewsApp> {
       title: 'SewsApp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: _role == null
-          ? RolePickerScreen(
-              onRoleSelected: (role) => setState(() => _role = role),
-            )
-          : AppShell(
-              role: _role!,
-              onChangeRole: () => setState(() => _role = null),
-            ),
+      home: SupabaseBootstrap.isInitialized
+          ? AuthGate(repository: AuthRepository())
+          : const MissingConfigScreen(),
     );
   }
 }

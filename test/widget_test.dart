@@ -1,22 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sewsapp/app.dart';
+import 'package:sewsapp/core/roles/user_role.dart';
 
 void main() {
-  testWidgets('affiche le sélecteur de rôle SewsApp', (tester) async {
+  testWidgets('sans dart-define : écran configuration manquante', (tester) async {
     await tester.pumpWidget(const SewsApp());
 
     expect(find.text('SewsApp'), findsOneWidget);
-    expect(find.text('Couturière'), findsOneWidget);
-    expect(find.text('Designer'), findsOneWidget);
-    expect(find.text('Marchand de tissus'), findsOneWidget);
+    expect(find.text('Configuration manquante'), findsOneWidget);
+    expect(find.textContaining('SUPABASE_ANON_KEY'), findsOneWidget);
   });
 
-  testWidgets('navigue vers le shell couturière', (tester) async {
-    await tester.pumpWidget(const SewsApp());
-    await tester.tap(find.text('Couturière'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Feed'), findsWidgets);
-    expect(find.text('Stock'), findsOneWidget);
+  test('mappe account_type prod vers UserRole', () {
+    expect(UserRoleX.fromAccountType('Regular User'), UserRole.couturiere);
+    expect(UserRoleX.fromAccountType('Designer'), UserRole.designer);
+    expect(UserRoleX.fromAccountType('Seller'), UserRole.marchandTissus);
+    expect(UserRoleX.fromAccountType(null), UserRole.couturiere);
+    expect(UserRoleX.fromAccountType('inconnu'), UserRole.couturiere);
   });
 }

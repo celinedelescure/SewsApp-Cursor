@@ -5,7 +5,8 @@ import '../config/env.dart';
 
 /// Initialise le client Supabase si URL + anon key sont fournis.
 ///
-/// Sans config : l'app tourne en mode placeholder (UI navigable, pas d'API).
+/// Sans config : écran « configuration manquante » (pas d'appels API).
+/// Avec config : Auth persiste la session (restauration au prochain lancement).
 class SupabaseBootstrap {
   SupabaseBootstrap._();
 
@@ -18,14 +19,14 @@ class SupabaseBootstrap {
       debugPrint(
         'Supabase non configuré — lancez avec '
         '--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... '
-        '(ref prod hint: ${Env.supabaseProjectRefHint})',
+        '(ref prod : ${Env.supabaseProjectRefHint})',
       );
       return;
     }
 
     await Supabase.initialize(
       url: Env.supabaseUrl,
-      // Clé « anon » du dashboard = publishable key côté SDK.
+      // Clé « anon » du dashboard (= publishableKey côté SDK récent).
       publishableKey: Env.supabaseAnonKey,
     );
     _initialized = true;
